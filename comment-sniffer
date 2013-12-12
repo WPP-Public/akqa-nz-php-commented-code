@@ -1,0 +1,24 @@
+#!/usr/bin/php
+<?php
+
+require_once("CommentSniffer.php");
+
+function writeOut($msg)
+{
+    fwrite(STDOUT, $msg.PHP_EOL);
+}
+
+
+if(!isset($argv[1])) {
+    writeOut("Please specify a directory.");
+    exit;
+}
+
+
+$dir = realpath($argv[1]);
+
+$options = getopt("", array('tolerance::'));
+$tolerance = (isset($options['tolerance'])) ? $options['tolerance'] : 5;
+
+$sniffer = new CommentSniffer($dir, $tolerance);
+$sniffer->run();
