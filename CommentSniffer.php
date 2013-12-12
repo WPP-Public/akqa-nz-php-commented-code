@@ -1,9 +1,20 @@
 <?php
 
 
+/**
+ * Given a directory tree, this class scans for all PHP files and evaluates its comment
+ * sections for PHP code
+ *
+ * @author Aaron Carlino <aaron.carlino@heyday.co.nz>
+ */
 class CommentSniffer {
 
 
+    /**
+     * Maps qualifying PHP tokens to a numeric value that is commensurate
+     * with the token's likelihood of being PHP code
+     * @var array
+     */
     protected static $token_values = array (
         T_AND_EQUAL  => 5, // &=  assignment operators
         T_ARRAY  => 5, //array() array(), array syntax
@@ -94,12 +105,25 @@ class CommentSniffer {
     );
 
 
+    /**
+     * A list of files in the tree
+     * @var Iterator
+     */
     protected $files;
 
 
+    /**
+     * The threshold at which a result's score is included in the report
+     * @var int
+     */
     protected $tolerance;
 
 
+    /**
+     * Constructor for the comment sniffer
+     * @param string  $dir       The directory to scan
+     * @param integer $tolerance The tolerance level
+     */
     public function __construct($dir, $tolerance = 5)
     {
         if(!is_dir($dir)) {
@@ -124,19 +148,30 @@ class CommentSniffer {
     }
 
 
+    /**
+     * Runs the application
+     */
     public function run()
     {
         foreach($this->files as $filename => $list) {
             $fileScores = array ();
             foreach(token_get_all(file_get_contents($filename)) as $token) {
                 if($token[0] !== T_COMMENT) continue;
+
                 $comment = $token[1];
 
+                // Remove comment delimiters
                 $comment = preg_replace('/^\/\*\*?/', '', $comment);
                 $comment = preg_replace('/\*\/$/','', $comment);
                 $comment = preg_replace('/\/\//','', $comment);
 
+                // Throw out comments that are only one line
+                if(sizeof(explode(PHP_EOL, $comment)) <= 2) continue;
+
+                // Scan the comment for PHP tokens
+
                 $contents = token_get_all("<?php $comment ?>");
+
                 $score = 0;
                 foreach($contents as $subToken) {
                     if(isset(self::$token_values[$subToken[0]])) {
@@ -158,5 +193,6 @@ class CommentSniffer {
                 }
             }
         }
+        writeOut("Scanned " . sizeof($this->files) . " files successfully");
     }
 }
