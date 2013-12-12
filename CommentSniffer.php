@@ -170,7 +170,7 @@ class CommentSniffer {
 
                 // Scan the comment for PHP tokens
 
-                $contents = token_get_all("<?php $comment ?>");
+                $contents = @token_get_all("<?php $comment ?>");
 
                 $score = 0;
                 foreach($contents as $subToken) {
